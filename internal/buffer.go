@@ -1,40 +1,96 @@
 package internal
 
 import (
-	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
+	"math/big"
+	"sync"
+
+	posiedon "github.com/iden3/go-iden3-crypto/poseidon"
+	"github.com/pkg/errors"
 )
 
-type StateBuffer struct {
+/*
+	StateBuffer is a simple channel based ring buffer
+	which is used to quickly
+	cache the serialized states of the observable.
+*/
+
+type Buffer interface {
+	Stash(_ []byte) (*big.Int, error)
+	Sink(sink chan<- []byte)
+	Size() int
+	Root() *big.Int
+	Cnt() uint64
+	Purge() bool
 }
 
-func (s *StateBuffer) Stash(watcher.State) error {
-	return nil
+type _Buffer struct {
+	stash   chan []byte
+	root    *big.Int
+	counter uint64
+	lock    *sync.RWMutex
 }
 
-func (s *StateBuffer) Discard() bool {
-	return false
+func NewBuffer(initRoot *big.Int) Buffer {
+	return &_Buffer{
+		stash:   make(chan []byte),
+		counter: 0,
+		root:    big.NewInt(0).Set(initRoot),
+		lock:    &sync.RWMutex{},
+	}
 }
 
-func (s *StateBuffer) PeekLast() (watcher.State, error) {
-	return nil, nil
+func (s *_Buffer) Root() *big.Int {
+	return s.root
 }
 
-func (s *StateBuffer) Size() int {
-	return 0
+func (s *_Buffer) Stash(ss []byte) (*big.Int, error) {
+
+	var (
+		hash    *big.Int
+		newRoot *big.Int
+		err     error
+	)
+	if hash, err = posiedon.HashBytes(ss); err == nil {
+		if newRoot, err = posiedon.HashWithState([]*big.Int{hash}, s.root); err == nil {
+			s.stash <- ss
+			s.counter++
+			return s.root.Set(newRoot), nil
+		}
+	}
+	return nil, errors.Wrap(err, "failed to stash incoming")
 }
 
-func (s *StateBuffer) Pop() (watcher.State, error) {
-	return nil, nil
+func (s *_Buffer) Sink(sink chan<- []byte) {
+	for ss := range s.stash {
+		sink <- ss
+	}
 }
 
-func (s *StateBuffer) Commit() error {
-	return nil
+func (s *_Buffer) Size() int {
+	return len(s.stash)
 }
 
-func (s *StateBuffer) Snapshot() ([]byte, error) {
-	return nil, nil
+func (s *_Buffer) Cnt() uint64 {
+	return s.counter
 }
 
-func (s *StateBuffer) Purge() error {
-	return nil
+// Purge removes all the stashed & to-be sinked
+// states from the buffer
+// By simply dumping the items into the ether
+func (s *_Buffer) Purge() bool {
+	defer s.lock.Unlock()
+	s.lock.Lock()
+	if s.counter == 0 {
+		return false
+	}
+	for {
+		select {
+		case <-s.stash:
+			continue
+		default:
+			s.counter = 0
+			s.root = nil
+			return true
+		}
+	}
 }

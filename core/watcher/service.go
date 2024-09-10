@@ -24,31 +24,30 @@ type Observable interface {
 }
 
 type Service struct {
-	getRange func(context.Context) (uint64, uint64)
-	adapter  erpc.Backend
+	adapter erpc.Backend
 }
 
 func NewService(
-	getRange func(context.Context) (uint64, uint64),
 	adapter erpc.Backend,
 ) *Service {
 	return &Service{
-		getRange: getRange,
-		adapter:  adapter,
+		adapter: adapter,
 	}
 }
 
-func (s *Service) Watch(obs Observable) ([]State, error) {
+func (s *Service) Watch(obs Observable, blockRange [2]uint64) ([]State, error) {
+	if blockRange[0] > blockRange[1] || blockRange[0] == 0 || blockRange[1] == 0 {
+		return nil, errors.New("invalid block range")
+	}
 	var (
-		err        error
-		states     []State
-		start, end = s.getRange(context.Background())
+		err    error
+		states []State
 	)
 
 	stream, err := obs.Play(s.adapter, &bind.FilterOpts{
 		Context: context.Background(),
-		Start:   start,
-		End:     &end,
+		Start:   blockRange[0],
+		End:     &blockRange[1],
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to observe the given instance")

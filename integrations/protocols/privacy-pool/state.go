@@ -12,6 +12,9 @@ import (
 
 var _ watcher.State = (*State)(nil)
 
+// State represents the state of the privacy pool
+// at a given point in time (referenced by the record event e)
+// It contains the scope, hash, event, and state
 type State struct {
 	Sc []byte `cbor:"scope"`
 	H  []byte `cbor:"hash"`
@@ -37,6 +40,9 @@ func (s *State) DeriveFrom(scope []byte, r *PrivacyPoolRecord) *State {
 	return nil
 }
 
+// Serialize returns the serialized state
+// using the cbor marshaler
+// returns nil if serialization fails
 func (s *State) Serialize() []byte {
 	if out, err := cbor.Marshal(s); err == nil {
 		return out
@@ -44,7 +50,19 @@ func (s *State) Serialize() []byte {
 	return nil
 }
 
-func (*State) Deserialize(b []byte) *State {
+var StateDeserializerFunc watcher.StateDeserializer = func(b []byte) watcher.State {
+	s := &State{}
+	if err := cbor.Unmarshal(b, s); err == nil {
+		return s
+	}
+	return nil
+}
+
+// Deserialize returns the deserialized state
+// from the byte slice
+// using the cbor unmarshaler
+// returns nil if deserialization fails
+func (*State) Deserialize(b []byte) watcher.State {
 	s := &State{}
 	if err := cbor.Unmarshal(b, s); err == nil {
 		return s
@@ -85,8 +103,13 @@ func (dst *State) copy(src *State) *State {
 	return dst
 }
 
+// Clone returns a deep copy of the state
+// using the copy method
 func (s *State) Clone() watcher.State { return new(State).copy(s) }
 
+// TransitionInput represents the input  that
+// is used to transition the state
+// It contains the source, sink, fee collector, and fee
 type TransitionInput struct {
 	Src          []byte `cbor:"src"`
 	Sink         []byte `cbor:"sink"`
@@ -94,6 +117,8 @@ type TransitionInput struct {
 	Fee          []byte `cbor:"fee"`
 }
 
+// StateTransitionEvent represents the state transition event
+// It contains the new root, new size, and transition input
 type StateTransitionEvent struct {
 	NewRoot []byte `cbor:"newRoot"`
 	NewSize []byte `cbor:"newSize"`
@@ -117,10 +142,16 @@ func (*StateTransitionEvent) Deserialize(data []byte) *StateTransitionEvent {
 	return nil
 }
 
+// InputMatch returns true if the transition input
+// of the state transition event matches the other event
+// otherwise returns false
 func (trans *StateTransitionEvent) InputMatch(e *StateTransitionEvent) bool {
 	return reflect.DeepEqual(trans.TransitionInput, e.TransitionInput)
 }
 
+// RootMatch returns true if the new root and new size
+// of the state transition event match the other event
+// otherwise returns false
 func (trans *StateTransitionEvent) RootMatch(e *StateTransitionEvent) bool {
 	if bytes.Compare(trans.NewRoot, e.NewRoot) != 0 {
 		return false
@@ -131,7 +162,13 @@ func (trans *StateTransitionEvent) RootMatch(e *StateTransitionEvent) bool {
 	return true
 }
 
-func (trans *StateTransitionEvent) FromRecord(r *PrivacyPoolRecord) (*watcher.Event, *StateTransitionEvent) {
+// FromRecord returns the state transition event
+// from parsing the privacy pool record event
+// returns nil if the record is invalid
+func (trans *StateTransitionEvent) FromRecord(r *PrivacyPoolRecord) (
+	*watcher.Event,
+	*StateTransitionEvent,
+) {
 	trans = &StateTransitionEvent{
 		TransitionInput: TransitionInput{
 			Src:          make([]byte, 20),

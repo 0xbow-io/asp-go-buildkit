@@ -39,9 +39,15 @@ type Observer struct {
 	Recorder
 }
 
+// Observe triggers the observation of an observable
+// Observation is a process that involves
+// recording the observable's state only
+// when a state-transition has been
+// detected
 func (o *Observer) Observe(obs Observable) (chan<- []byte, error) {
 	stream := make(chan<- []byte)
 	go func() {
+		// kick off the recorder go-routine
 		if err := o.Record(stream); err != nil {
 			log.Error(err)
 			return

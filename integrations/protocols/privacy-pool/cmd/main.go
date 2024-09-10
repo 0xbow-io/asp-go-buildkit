@@ -5,19 +5,21 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"time"
 
 	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
 	privacypool "github.com/0xBow-io/asp-go-buildkit/integrations/protocols/privacy-pool"
+	. "github.com/0xBow-io/asp-go-buildkit/integrations/protocols/privacy-pool/cmd/srv"
 
 	erpc "github.com/0xBow-io/asp-go-buildkit/internal/erpc"
 
 	"github.com/spf13/cobra"
 )
 
-var observabels = privacypool.Observables()
+var observables = privacypool.Observables()
 
 func findObservable(id string) watcher.Observable {
-	for _, o := range observabels {
+	for _, o := range observables {
 		if o.ID() == id {
 			return o
 		}
@@ -26,7 +28,7 @@ func findObservable(id string) watcher.Observable {
 }
 
 var rootCmd = &cobra.Command{
-	Use: "play [observable] [rpc] [from]",
+	Use: "play [observable] [rpc] [from] [range]",
 	Short: `
  ██████╗ ██████╗ ███████╗███████╗██████╗ ██╗   ██╗███████╗██████╗
 ██╔═══██╗██╔══██╗██╔════╝██╔════╝██╔══██╗██║   ██║██╔════╝██╔══██╗
@@ -68,23 +70,10 @@ var rootCmd = &cobra.Command{
 			cmd.Usage()
 			os.Exit(1)
 		}
-		end := uint64(6314742)
 
-		out, err := watcher.NewService(
-			func(ctx context.Context) (uint64, uint64) {
-				return uint64(from), end
-			},
-			adapter,
-		).Watch(observable)
-
-		for _, s := range out {
-			event := s.Event()
-			if event == nil {
-				fmt.Println("failed to extract event !")
-				os.Exit(1)
-			}
-			fmt.Printf("New State --> hash: %+v, event: %+v \n", s.Hash(), event.Format())
-		}
+		Observe(context.Background(), observable, adapter, uint64(from), 10000,
+			5*time.Second,
+			privacypool.StateDeserializerFunc)
 	},
 }
 

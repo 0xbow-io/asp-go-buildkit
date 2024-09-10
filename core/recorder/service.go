@@ -1,38 +1,40 @@
 package recorder
 
 import (
-	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
+	"errors"
+	"sync"
+
+	"github.com/0xBow-io/asp-go-buildkit/core/watcher"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/pkg/errors"
 )
 
 var (
 	log = logging.Logger("recorder")
 )
 
-type StateBuffer interface {
-	Size() int
-	Pop() (watcher.State, error)
-	PeekLast() (watcher.State, error)
-}
-
 type Service struct {
-	StateBuffer
+	wg       *sync.WaitGroup
+	preState watcher.State
 }
 
-func (s *Service) Record(out chan<- []byte) error {
-	for {
-		if s.Size() >= 2 {
-			post, err := s.Pop()
-			if err != nil {
-				return errors.Wrap(err, "failed to pop the latest state from the buffer")
-			}
+func NewService() *Service {
+	return &Service{
+		preState: nil,
+		wg:       new(sync.WaitGroup),
+	}
+}
 
-			pre, err := s.PeekLast()
-			if err != nil {
-				return errors.Wrap(err, "failed to peek the last known state")
-			}
-			out <- new(_Record).Build(post, pre).Serialize()
+func (s *Service) Record(postState watcher.State) (Record, error) {
+	var rec Record = nil
+	if s.preState != nil {
+		if rec := new(_Record).Build(postState, s.preState); rec == nil {
+			return nil, errors.New("failed to build a new record")
+		} else {
+			s.preState = postState.Clone()
+			return rec, nil
 		}
 	}
+
+	s.preState = postState.Clone()
+	return rec, nil
 }

@@ -26,6 +26,7 @@ const (
 	SEPOLIA_ETH_POOL_1 observable = iota
 	SEPOLIA_ETH_POOL_2
 	GNOSIS_XDAI_POOL_1
+	GNSOSI_XDA_POOL_2
 )
 
 var _ watcher.Observable = (*observable)(nil)
@@ -36,11 +37,12 @@ func Observables() []watcher.Observable {
 		SEPOLIA_ETH_POOL_1,
 		SEPOLIA_ETH_POOL_2,
 		GNOSIS_XDAI_POOL_1,
+		GNSOSI_XDA_POOL_2,
 	}
 }
 
 func (ob observable) ID() string {
-	return [...]string{"SEPOLIA_ETH_POOL_1", "SEPOLIA_ETH_POOL_2", "GNOSIS_XDAI_POOL_1"}[ob]
+	return [...]string{"SEPOLIA_ETH_POOL_1", "SEPOLIA_ETH_POOL_2", "GNOSIS_XDAI_POOL_1", "GNOSIS_XDAI_POOL_2"}[ob]
 }
 
 func strToBigInt(str string) *big.Int {
@@ -53,15 +55,16 @@ func (ob observable) Scope() []byte {
 		strToBigInt("15365509683721112532018974415132282847207162026665662018590046777583916671872").Bytes(),
 		strToBigInt("1594601211935923806427821481643004967624986397998197460555337643549018639657").Bytes(),
 		strToBigInt("11049869816642268564454296009173568684966369147224378104485796423384633924130").Bytes(),
+		strToBigInt("19420586229045152356890556789607410844693215030122143238126523862419003191309").Bytes(),
 	}[ob]
 }
 
 func (ob observable) ChainID() int {
-	return [...]int{11155111, 11155111, 100}[ob]
+	return [...]int{11155111, 11155111, 100, 100}[ob]
 }
 
 func (ob observable) Genesis() uint64 {
-	return [...]uint64{6313019, 6454920, 34972988}[ob]
+	return [...]uint64{6313019, 6454920, 34972988, 35827812}[ob]
 }
 
 func (ob observable) Address() common.Address {
@@ -69,6 +72,7 @@ func (ob observable) Address() common.Address {
 		common.HexToAddress("0x35F9acbaD838b12AA130Ef6386C14d847bdC1642"),
 		common.HexToAddress("0x0C606138Aa02600c55e0d427cf4B2a7319a808fe"),
 		common.HexToAddress("0x0C606138Aa02600c55e0d427cf4B2a7319a808fe"),
+		common.HexToAddress("0x555eb8F3C1C2bEDa8e8eA69F8c51317470Ab8fC1"),
 	}[ob]
 }
 
