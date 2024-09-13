@@ -9,7 +9,7 @@ import (
 
 	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
 	privacypool "github.com/0xBow-io/asp-go-buildkit/integrations/protocols/privacy-pool"
-	. "github.com/0xBow-io/asp-go-buildkit/integrations/protocols/privacy-pool/cmd/srv"
+	srv "github.com/0xBow-io/asp-go-buildkit/integrations/protocols/privacy-pool/cmd/srv"
 
 	erpc "github.com/0xBow-io/asp-go-buildkit/internal/erpc"
 
@@ -70,8 +70,7 @@ var rootCmd = &cobra.Command{
 			cmd.Usage()
 			os.Exit(1)
 		}
-
-		Observe(context.Background(), observable, adapter, uint64(from), 10000,
+		srv.Observe(context.Background(), observable, adapter, uint64(from), 10000,
 			5*time.Second,
 			privacypool.StateDeserializerFunc)
 	},

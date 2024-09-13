@@ -23,6 +23,8 @@ type Record interface {
 	Deserialize([]byte) Record
 }
 
+func DeserializeRecord(rec []byte) Record { return new(_Record).Deserialize(rec) }
+
 type _Record struct {
 	Sc    []byte `cbor:"scope"`
 	H     []byte `cbor:"hash"`

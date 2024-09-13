@@ -27,4 +27,8 @@ type Backend interface {
 	BlockNumber(ctx context.Context) (uint64, error)
 	BlockByNumber(ctx context.Context, number *big.Int) (*types.Block, error)
 	TransactionReceipt(ctx context.Context, txHash common.Hash) (*types.Receipt, error)
+	TransactionByHash(
+		ctx context.Context,
+		hash common.Hash,
+	) (tx *types.Transaction, isPending bool, err error)
 }

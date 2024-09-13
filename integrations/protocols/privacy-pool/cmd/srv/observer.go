@@ -14,7 +14,7 @@ import (
 	"encoding/hex"
 
 	"github.com/0xBow-io/asp-go-buildkit/core/detector"
-	"github.com/0xBow-io/asp-go-buildkit/core/recorder"
+	r "github.com/0xBow-io/asp-go-buildkit/core/recorder"
 	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
 )
 
@@ -44,15 +44,16 @@ func Observe(
 	maxWindowSize uint64,
 	waitTimeMs time.Duration,
 	des watcher.StateDeserializer,
-) error {
+) (<-chan r.Record, error) {
 	var (
-		stream   = make(chan []byte)
-		wg       = new(sync.WaitGroup)
-		buff     = InitBuff(stream, big.NewInt(0))
-		detector = detector.NewService(buff)
-		recorder = recorder.NewService()
-		watcher  = watcher.NewService(adapter)
-		window   = [2]uint64{startBlock, startBlock + maxWindowSize}
+		stream     = make(chan []byte)
+		wg         = new(sync.WaitGroup)
+		buff       = InitBuff(stream, big.NewInt(0))
+		detector   = detector.NewService(buff)
+		recorder   = r.NewService()
+		watcher    = watcher.NewService(adapter)
+		window     = [2]uint64{startBlock, startBlock + maxWindowSize}
+		recordChan = make(chan r.Record)
 	)
 
 	go func() {
@@ -129,11 +130,7 @@ func Observe(
 				os.Exit(1)
 			}
 			if rec != nil {
-				fmt.Printf("Recorded State --> hash: %+v, postState: %+v preState: %+v\n",
-					hex.EncodeToString(rec.Hash()),
-					hex.EncodeToString(rec.PostState()),
-					hex.EncodeToString(rec.PreState()),
-				)
+				Categorize(rec.Serialize(), adapter)
 			}
 		} else {
 			fmt.Println("failed to deserialize state !")
@@ -142,5 +139,5 @@ func Observe(
 	}
 
 	wg.Wait()
-	return nil
+	return recordChan, nil
 }
