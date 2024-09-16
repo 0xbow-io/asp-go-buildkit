@@ -3,6 +3,7 @@ package srv
 import (
 	"context"
 	"fmt"
+	"time"
 
 	r "github.com/0xBow-io/asp-go-buildkit/core/recorder"
 	chainalaysis "github.com/0xBow-io/asp-go-buildkit/internal/category/feature/extractors/plugins/chainalysis"
@@ -32,6 +33,9 @@ func Categorize(rec []byte, adapter erpc.Backend) {
 		fmt.Println("Failed to get external ID from registration")
 		return
 	}
+
+	//simple sleep to allow chainalysis to process the transfer
+	time.Sleep(30 * time.Second)
 
 	result, err := caAPI.GetTransferSummary(ctx, externalid)
 	if err != nil {
@@ -82,6 +86,10 @@ func HandleRegistration(ctx context.Context, record r.Record, adapter erpc.Backe
 		InputAddresses:    []string{fromAddress},
 		OutputAddress:     toAddress,
 	})
+	if err != nil {
+		fmt.Printf("Failed to register transfer:  %+v\n", err)
+		return nil
+	}
 
 	return &registerResp
 
