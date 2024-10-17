@@ -6,7 +6,7 @@ import (
 
 	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 var (

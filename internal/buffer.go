@@ -5,7 +5,7 @@ import (
 	"sync"
 
 	posiedon "github.com/iden3/go-iden3-crypto/poseidon"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 /*

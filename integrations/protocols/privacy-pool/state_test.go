@@ -8,7 +8,7 @@ import (
 	watcher "github.com/0xBow-io/asp-go-buildkit/core/watcher"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
-	"github.com/test-go/testify/require"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_StateTransitionEvent(t *testing.T) {

@@ -3,7 +3,7 @@ package core
 import (
 	"errors"
 
-	"github.com/ilyakaznacheev/cleanenv"
+	"github.com/numbergroup/cleanenv"
 )
 
 var (
