@@ -9,7 +9,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	logging "github.com/ipfs/go-log/v2"
-	"github.com/pkg/errors"
+	"github.com/cockroachdb/errors"
 )
 
 var (
